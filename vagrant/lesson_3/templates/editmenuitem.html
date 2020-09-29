@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang='xml:lang'>
+    <head>
+        <title>Restaurant {{ restaurant_id }} - Edit Menu Item {{ edit_item.name }}</title>
+    </head>
+    <body>
+        <form action={{ url_for('edit_menu_item', restaurant_id = restaurant_id, menu_id = menu_id) }} method="POST">
+            <label>Name: <input name="name" size='30' type="text" placeholder={{ edit_item.name }}></label></br>
+            <label>Price:<input name="price" type="number" placeholder={{ edit_item.price }}></label></br>
+            <label>Description<input name="description" size='120' type="text" placeholder={{ edit_item.description }}></label></br>
+            <input type="submit" value="Submit">
+            <a href={{ url_for('restaurant_menu', restaurant_id = restaurant_id) }}>Cancel</a>
+        </form>
+    </body>
+</html>
