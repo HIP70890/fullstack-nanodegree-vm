@@ -1,22 +1,16 @@
 from flask import Flask, render_template, request, redirect, url_for, flash, jsonify
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, scoped_session
-from database_setup import Base, Restaurant, MenuItem
+from database_setup import Base, Restaurant, MenuItem, RestaurantDBSession
 
 app = Flask(__name__)
-
-engine = create_engine('sqlite:///restaurantmenu.db')
-Base.metadata.bind = engine
 
 HTML_BR = '</br>'
 
 class ScopedDBSession():
 
-    def __init__(self, engine):
-        self.engine = engine
-
     def __enter__(self):
-        self.session = scoped_session(sessionmaker(autocommit=False, autoflush=False, bind=self.engine))
+        self.session = RestaurantDBSession()
         return self.session
     
     def __exit__(self, *args):
@@ -24,14 +18,14 @@ class ScopedDBSession():
 
 @app.route('/restaurants/<int:restaurant_id>/menu/JSON')
 def restaurant_menu_json(restaurant_id):
-    with ScopedDBSession(engine) as session:
+    with ScopedDBSession() as session:
         restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
         items = session.query(MenuItem).filter_by(restaurant_id=restaurant.id)
         return jsonify(MenuItems=[i.serialize for i in items])
 
 @app.route('/restaurants/<int:restaurant_id>/menu/<int:menu_id>/JSON')
 def restaurant_menu_item_json(restaurant_id, menu_id):
-    with ScopedDBSession(engine) as session:
+    with ScopedDBSession() as session:
         restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
         items = session.query(MenuItem).filter_by(restaurant_id=restaurant.id, id=menu_id).one()
         return jsonify(MenuItems=[items.serialize])
@@ -39,14 +33,14 @@ def restaurant_menu_item_json(restaurant_id, menu_id):
 @app.route('/')
 @app.route('/restaurants/<int:restaurant_id>/menu')
 def restaurant_menu(restaurant_id):
-    with ScopedDBSession(engine) as session:
+    with ScopedDBSession() as session:
         restaurant = session.query(Restaurant).filter_by(id=restaurant_id).one()
         items = session.query(MenuItem).filter_by(restaurant_id=restaurant.id)
         return render_template('menu.html', restaurant=restaurant, items=items)
 
 @app.route('/restaurants/<int:restaurant_id>/new', methods=['GET', 'POST'])
 def new_menu_item(restaurant_id):
-    with ScopedDBSession(engine) as session:
+    with ScopedDBSession() as session:
         if request.method == 'POST':
             new_item = MenuItem(name = request.form['name'],
                 price = request.form['price'],
@@ -61,7 +55,7 @@ def new_menu_item(restaurant_id):
 
 @app.route('/restaurants/<int:restaurant_id>/menuitem/<int:menu_id>/edit', methods=['GET', 'POST'])
 def edit_menu_item(restaurant_id, menu_id):
-    with ScopedDBSession(engine) as session:
+    with ScopedDBSession() as session:
         edit_item = session.query(MenuItem).filter_by(id=menu_id).one()
 
         if request.method == 'POST':
@@ -80,7 +74,7 @@ def edit_menu_item(restaurant_id, menu_id):
 
 @app.route('/restaurants/<int:restaurant_id>/menuitem/<int:menu_id>/delete', methods=['GET', 'POST'])
 def delete_menu_item(restaurant_id, menu_id):
-    with ScopedDBSession(engine) as session:
+    with ScopedDBSession() as session:
         delete_item = session.query(MenuItem).filter_by(id=menu_id).one()
 
         if request.method == 'POST':
